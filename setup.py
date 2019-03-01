@@ -6,6 +6,6 @@ setup(name='autodeb',
       author='Victor Rodriguez',
       author_email='vm.rod25@gmail.com',
       packages =['autodeb'],
-      scripts=['autodeb/autodeb.py'],
+      scripts=['autodeb/autodeb'],
       )
 

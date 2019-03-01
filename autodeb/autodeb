@@ -1,9 +1,17 @@
 #!/usr/bin/python3
 import argparse
+import os
+
+def subdir_exist():
+    content = None
+    fname = "subdir"
+    if os.path.isfile(fname):
+        with open(fname) as f:
+            content = f.readlines()
+    return content
 
 def main():
     print("Welcome to autodeb")
-
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-s','--src_url', action='store',
@@ -11,8 +19,11 @@ def main():
             help='URL where the code is stored')
 
     results = parser.parse_args()
-    print(results.src_url)
-
+    if results.src_url:
+        print(results.src_url)
+        subdir = subdir_exist()
+        if subdir:
+            print(subdir)
 
 if __name__ == '__main__':
     main()

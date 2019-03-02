@@ -3,12 +3,25 @@ import argparse
 import os
 
 def subdir_exist():
-    content = None
     fname = "subdir"
     if os.path.isfile(fname):
-        with open(fname) as f:
-            content = f.readlines()
-    return content
+        return True
+    else:
+        return False
+def get_subdir():
+    subdir = None
+    fname = "subdir"
+    with open(fname) as f:
+        lines = f.readlines()
+        if len(lines) > 1:
+            subdir = lines[0].strip()
+    return subdir
+def clone(url):
+    cmd = "git clone --depth=1 %s" % (url)
+    ret = os.system(cmd)
+    if ret:
+        print("Error cloning")
+        exit(-1)
 
 def main():
     print("Welcome to autodeb")
@@ -16,14 +29,30 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-s','--src_url', action='store',
             dest='src_url',
-            help='URL where the code is stored')
-
+            help='URL from where to clone')
+    parser.add_argument('-n','--name', action='store',
+            dest='name',
+            help='Name of the package')
     results = parser.parse_args()
-    if results.src_url:
-        print(results.src_url)
-        subdir = subdir_exist()
-        if subdir:
-            print(subdir)
+
+    url = results.src_url
+    name = results.name
+    repo = url.split("/")[-1].strip()
+    tar = "%s-0.0.tar.gz" % (name)
+
+    if subdir_exist():
+        subdir = get_subdir()
+
+    if not os.path.isfile(tar):
+        if not os.path.isdir(repo):
+            clone(url)
+        if not os.path.isdir("%s-0.0" % name):
+            if subdir:
+                cmd = "cp -rf %s/%s %s-0.0" % (repo,subdir,name)
+                ret = os.system(cmd)
+                if ret:
+                    print("Error Creating dir")
+                    exit(-1)
 
 if __name__ == '__main__':
     main()

@@ -1,58 +1,90 @@
 #!/usr/bin/python3
 import argparse
 import os
+import sys
+import shutil
 
-def subdir_exist():
-    fname = "subdir"
-    if os.path.isfile(fname):
-        return True
-    else:
-        return False
-def get_subdir():
-    subdir = None
-    fname = "subdir"
-    with open(fname) as f:
-        lines = f.readlines()
-        if len(lines) > 1:
-            subdir = lines[0].strip()
-    return subdir
 def clone(url):
     cmd = "git clone --depth=1 %s" % (url)
     ret = os.system(cmd)
     if ret:
-        print("Error cloning")
+        print("Clone of repo : ERROR")
         exit(-1)
+    else:
+        print("Clone of repo : OK")
+def create_src_dir(repo,subdir,name):
+    cmd = "cp -rf %s/%s %s-0.0" % (repo,subdir,name)
+    ret = os.system(cmd)
+    if ret:
+        print("Creation of source dir : ERROR")
+        exit(-1)
+    else:
+        print("Creation of source dir : OK")
+
+def create_tar(tar,name):
+    cmd="tar -czf %s %s-0.0" % (tar,name)
+    ret = os.system(cmd)
+    if ret:
+        print("Creation of tar.gz : ERROR")
+        exit(-1)
+    else:
+        print("Creation of tar.gz : OK")
 
 def main():
     print("Welcome to autodeb")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s','--src_url', action='store',
+    parser.add_argument('-u','--src_url', action='store',
             dest='src_url',
             help='URL from where to clone')
     parser.add_argument('-n','--name', action='store',
             dest='name',
             help='Name of the package')
+    parser.add_argument('-d','--sub_dir', action='store',
+            dest='sub_dir',
+            help="path of the subdirectory where src lives")
+    parser.add_argument('-b','--debmake_b', action='store',
+            dest='deb_make_b',
+            help="debmake -b:   option")
     results = parser.parse_args()
 
-    url = results.src_url
-    name = results.name
-    repo = url.split("/")[-1].strip()
-    tar = "%s-0.0.tar.gz" % (name)
+    if len(sys.argv)==1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
 
-    if subdir_exist():
-        subdir = get_subdir()
+    if results.src_url:
+        url = results.src_url
+        repo = url.split("/")[-1].strip()
+    if results.name:
+        name = results.name
+        tar = "%s-0.0.tar.gz" % (name)
+    if results.sub_dir:
+        subdir = results.sub_dir
+    if results.deb_make_b:
+        deb_make_b = results.deb_make_b
 
     if not os.path.isfile(tar):
         if not os.path.isdir(repo):
             clone(url)
         if not os.path.isdir("%s-0.0" % name):
             if subdir:
-                cmd = "cp -rf %s/%s %s-0.0" % (repo,subdir,name)
-                ret = os.system(cmd)
-                if ret:
-                    print("Error Creating dir")
-                    exit(-1)
+                create_src_dir(repo,subdir,name)
+        if os.path.isdir("%s-0.0" % name):
+            create_tar(tar,name)
+
+    if os.path.isdir("%s-0.0" % name):
+        os.chdir("%s-0.0" % name)
+        if deb_make_b:
+            cmd = "debmake -b:%s" % (deb_make_b)
+        else:
+            cmd = "debmake"
+        os.system(cmd)
+        if os.path.isfile("../rules"):
+            shutil.copyfile("../rules","debian/rules")
+        if os.path.isfile("../control"):
+            shutil.copyfile("../control","debian/control")
+        cmd = "dpkg-buildpackage"
+        os.system(cmd)
 
 if __name__ == '__main__':
     main()

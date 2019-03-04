@@ -83,7 +83,7 @@ def main():
             shutil.copyfile("../rules","debian/rules")
         if os.path.isfile("../control"):
             shutil.copyfile("../control","debian/control")
-        cmd = "dpkg-buildpackage"
+        cmd = "pdebuild --use-pdebuild-internal"
         os.system(cmd)
 
 if __name__ == '__main__':

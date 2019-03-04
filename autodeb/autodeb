@@ -12,8 +12,11 @@ def clone(url):
         exit(-1)
     else:
         print("Clone of repo : OK")
-def create_src_dir(repo,subdir,name):
-    cmd = "cp -rf %s/%s %s-0.0" % (repo,subdir,name)
+def create_src_dir(repo,subdir,name,path):
+    if subdir and not path:
+        cmd = "cp -rf %s/%s %s-0.0" % (repo,subdir,name)
+    if not subdir and path:
+        cmd = "cp -rf %s %s-0.0" % (path,name)
     ret = os.system(cmd)
     if ret:
         print("Creation of source dir : ERROR")
@@ -46,6 +49,9 @@ def main():
     parser.add_argument('-b','--debmake_b', action='store',
             dest='deb_make_b',
             help="debmake -b:   option")
+    parser.add_argument('-p','--path_src', action='store',
+            dest='path_src',
+            help="path where the src code lives")
     results = parser.parse_args()
 
     if len(sys.argv)==1:
@@ -62,13 +68,21 @@ def main():
         subdir = results.sub_dir
     if results.deb_make_b:
         deb_make_b = results.deb_make_b
+    if results.path_src:
+        src_path = results.path_src
 
-    if not os.path.isfile(tar):
+    if not os.path.isfile(tar) and results.src_url:
         if not os.path.isdir(repo):
             clone(url)
         if not os.path.isdir("%s-0.0" % name):
             if subdir:
-                create_src_dir(repo,subdir,name)
+                create_src_dir(repo,subdir,name,None)
+        if os.path.isdir("%s-0.0" % name):
+            create_tar(tar,name)
+
+    if not os.path.isfile(tar) and src_path:
+        if not os.path.isdir("%s-0.0" % name):
+            create_src_dir(None,None,name,src_path)
         if os.path.isdir("%s-0.0" % name):
             create_tar(tar,name)
 

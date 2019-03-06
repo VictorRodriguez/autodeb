@@ -97,7 +97,19 @@ def main():
             shutil.copyfile("../rules","debian/rules")
         if os.path.isfile("../control"):
             shutil.copyfile("../control","debian/control")
-        cmd = "pdebuild --use-pdebuild-internal"
+
+        cmd = "dpkg-source -b ."
+        os.system(cmd)
+
+        os.chdir('..')
+
+        cmd = "sudo rm -rf /var/cache/pbuilder/result/*"
+        os.system(cmd)
+        os.mkdir("results/")
+
+        cmd = "sudo pbuilder build *.dsc --buildresult ."
+        os.system(cmd)
+        cmd = "sudo cp -rf /var/cache/pbuilder/result/* results/"
         os.system(cmd)
 
 if __name__ == '__main__':

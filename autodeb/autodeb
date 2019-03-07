@@ -107,7 +107,7 @@ def main():
         os.system(cmd)
         os.mkdir("results/")
 
-        cmd = "sudo pbuilder build *.dsc --buildresult ."
+        cmd = "sudo pbuilder build --override-config *.dsc"
         os.system(cmd)
         cmd = "sudo cp -rf /var/cache/pbuilder/result/* results/"
         os.system(cmd)

@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import shutil
+import glob
 
 def clone(url):
     cmd = "git clone --depth=1 %s" % (url)
@@ -87,26 +88,39 @@ def main():
             create_tar(tar,name)
 
     if os.path.isdir("%s-0.0" % name):
+        # Setup debian directory using debmake
         os.chdir("%s-0.0" % name)
         if deb_make_b:
             cmd = "debmake -b:%s" % (deb_make_b)
         else:
             cmd = "debmake"
         os.system(cmd)
+
+        # Copy needed files into the debian directory. In there is going to be
+        # built the deb package.
         if os.path.isfile("../rules"):
             shutil.copyfile("../rules","debian/rules")
         if os.path.isfile("../control"):
             shutil.copyfile("../control","debian/control")
 
+        os.chdir("..")
+        for install_file in glob.glob("*.install"):
+            shutil.copyfile(install_file,
+                            "{}-0.0/debian/{}".format(name, install_file))
+        os.chdir("%s-0.0" % name)
+
+        # dpkg-source
         cmd = "dpkg-source -b ."
         os.system(cmd)
 
         os.chdir('..')
 
+        # Cleans previous results
         cmd = "sudo rm -rf /var/cache/pbuilder/result/*"
         os.system(cmd)
         os.mkdir("results/")
 
+        # Run pbuilder chroot environment to build deb package
         cmd = "sudo pbuilder build --override-config *.dsc"
         os.system(cmd)
         cmd = "sudo cp -rf /var/cache/pbuilder/result/* results/"
